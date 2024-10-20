@@ -1,7 +1,13 @@
 import math
-import sys
 
 def solve_quadratic(a, b, c):
+    if a == 0:
+        if b == 0:
+            print(f"Это не уравнение, так как a и b равны нулю.")
+            return 0
+        else:
+            print(f"Это линейное уравнение. Корень: {-c / b}")
+            return 0
     discriminant = b**2 - 4*a*c
     if discriminant < 0:
         print("Нет корней")
