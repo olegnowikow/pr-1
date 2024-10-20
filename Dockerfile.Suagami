@@ -1,0 +1,13 @@
+# для работы с приложением требуется запустить контейнер в интерактивном режиме: 
+# docker run -it <image_name>
+FROM python:3.13
+
+RUN git clone https://github.com/francoischalifour/todo-cli
+
+WORKDIR /todo-cli
+
+RUN pip install .
+
+WORKDIR /app
+
+CMD ["todo", "init"]
