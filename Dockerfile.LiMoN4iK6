@@ -1,7 +1,5 @@
 FROM node:14
 
-ENV OPENWEATHER_API_KEY=cead290bd3b1bf1713c73405d119a2ee
-
 WORKDIR /app
 
 RUN git clone https://github.com/codebucks27/React-Weather-app.git
