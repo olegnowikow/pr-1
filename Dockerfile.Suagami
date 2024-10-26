@@ -1,5 +1,5 @@
-# для работы с приложением требуется запустить контейнер в интерактивном режиме: 
-# docker run -it <image_name>
+# для работы с приложением требуется запустить контейнер в фоновом режиме, после чего запустить терминал внутри контейнера:
+# docker run -d --name <container_name> <image_name>; docker exec -it <container_name> bash
 FROM python:3.13
 
 RUN git clone https://github.com/francoischalifour/todo-cli
@@ -10,4 +10,4 @@ RUN pip install .
 
 WORKDIR /app
 
-CMD ["todo", "init"]
+CMD ["tail", "-f", "/dev/null"]
