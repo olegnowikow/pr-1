@@ -1,0 +1,11 @@
+FROM nginx:alpine
+
+RUN apk add --no-cache git
+
+RUN git clone https://github.com/urbantatsu/Odintsov-pr-2.git  /tmp/app
+
+RUN cp -r /tmp/app/* /usr/share/nginx/html
+
+RUN rm -rf /tmp/app
+
+EXPOSE 80
