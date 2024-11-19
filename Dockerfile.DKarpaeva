@@ -1,0 +1,9 @@
+FROM gcc:latest
+
+WORKDIR /app
+
+COPY calculator_KD.cpp .
+
+RUN g++ -o app calculator_KD.cpp
+
+CMD ["./app"]
