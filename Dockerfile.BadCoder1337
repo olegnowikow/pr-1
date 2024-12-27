@@ -1,0 +1,68 @@
+FROM node:18-bullseye-slim AS base
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y bash curl git
+
+# Образ конфигурации зависимостей
+# В итоге содержит package.json, yarn.lock, .yarn, 
+FROM base AS manifests
+
+COPY .yarn ./.yarn
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY packages packages
+# Ищем и удаляем не package.json файлы
+RUN find packages \! -name "package.json" -mindepth 2 -maxdepth 2 -print | xargs rm -rf
+
+# Образ со всем набором пакетов для сборки
+# В итоге содержит dependencies + devDependencies
+FROM manifests AS installer-dev
+
+RUN apt-get update && apt-get install -y python3 libtool build-essential
+# Иммутабельная установка и вывод логов с ошибками
+RUN yarn install --immutable || (for log in "/tmp/xfs-*/*.log"; do echo $log; cat $log; done; exit 1)
+
+# Образ с зависимостями для запуска
+# В итоге содержит только dependencies
+FROM installer-dev AS installer-prod
+
+ENV NODE_ENV=production
+# Очистка devDependencies и кэша
+RUN yarn workspaces focus --all --production && yarn cache clean --all
+
+# Образ с собранным воркспейсом
+# Содержит packages
+FROM installer-dev AS builder
+
+COPY . .
+
+ARG PROD_DATABASE_URL
+ARG REDIS_URL
+ARG PACKAGE_NAME
+
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+# Сборка воркспейса
+RUN yarn build:all
+
+# Образ для запуска
+FROM base AS runner
+
+ENV NODE_ENV=production
+
+# Копируем package.json
+COPY --from=manifests /app /app
+# Копируем продакшен-зависимости
+COPY --from=installer-prod /app /app
+# Копируем собранный воркспейс
+COPY --from=builder /app/packages /app/packages
+# Копируем собранный клиент БД
+COPY --from=builder /app/node_modules/.prisma /app/node_modules/.prisma
+COPY ./deploy /app/deploy
+
+# Старт пакета воркспейса
+CMD cd packages/$PACKAGE_NAME; yarn start
+
+# Отладка файловой системы
+# RUN apt install mc -y 
+# RUN rm -f "/etc/mc/mc.default.keymap" && echo "[filemanager]\nDirSize = alt-x" > "/etc/mc/mc.default.keymap"
+# CMD sleep infinity
